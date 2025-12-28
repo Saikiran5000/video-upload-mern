@@ -1,31 +1,32 @@
-# Video Upload MERN Assignment
-
-A full-stack MERN application that allows users to:
-- Register & Login using JWT authentication
-- Upload MP4 videos (role-based access)
-- Stream videos with HTTP Range support
-- View and delete uploaded videos
-- Real-time notifications using Socket.io (basic)
+# Video Upload, Sensitivity Processing & Streaming App
 
 ## Tech Stack
-- Frontend: React (Vite)
-- Backend: Node.js, Express
-- Database: MongoDB Atlas
+- Backend: Node.js, Express, MongoDB, Socket.io
+- Frontend: React, Vite
 - Auth: JWT
-- File Upload: Multer
-- Realtime: Socket.io
+- Upload: Multer
+- Streaming: HTTP Range Requests
 
 ## Features
-- Secure authentication
-- Role-based access (editor/admin)
-- Video upload & streaming
-- REST APIs
-- Clean folder structure
+- User registration & login
+- Role-based access (viewer/editor/admin)
+- Video upload with validation
+- Real-time processing updates (Socket.io)
+- Video streaming with range support
+- User-isolated video library
 
-## How to Run
+## Setup Instructions
 
 ### Backend
-```bash
 cd backend
 npm install
 node index.js
+
+### Frontend
+cd frontend
+npm install
+npm run dev
+
+## Notes
+- Sensitivity analysis is simulated (safe / flagged)
+- Local file storage used
