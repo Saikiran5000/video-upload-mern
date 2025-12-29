@@ -1,34 +1,45 @@
-import { useEffect, useState } from "react";
-import { io } from "socket.io-client";
-
-const socket = io("http://localhost:5000");
+import { useState } from "react";
 
 function Upload({ token }) {
   const [file, setFile] = useState(null);
   const [msg, setMsg] = useState("");
-  const [progress, setProgress] = useState(0);
-
-  useEffect(() => {
-    socket.on("video-progress", (data) => {
-      setProgress(data.progress);
-    });
-
-    return () => socket.off("video-progress");
-  }, []);
 
   const uploadVideo = async () => {
+    if (!file) {
+      setMsg("Please select a video file");
+      return;
+    }
+
     const formData = new FormData();
     formData.append("video", file);
 
-    await fetch("http://localhost:5000/api/videos/upload", {
-      method: "POST",
-      headers: {
-        Authorization: `Bearer ${token}`
-      },
-      body: formData
-    });
+    try {
+      const res = await fetch("http://localhost:5000/api/videos/upload", {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`
+        },
+        body: formData
+      });
 
-    setMsg("Upload started...");
+      const data = await res.json();
+
+      // 🔐 Role-based access handling
+      if (res.status === 403) {
+        setMsg("You don’t have access to upload videos");
+        return;
+      }
+
+      if (!res.ok) {
+        setMsg(data.message || "Upload failed");
+        return;
+      }
+
+      setMsg("Video uploaded successfully");
+      setFile(null);
+    } catch (error) {
+      setMsg("You don’t have access to upload videos");
+    }
   };
 
   return (
@@ -43,10 +54,10 @@ function Upload({ token }) {
 
       <button onClick={uploadVideo}>Upload</button>
 
-      {msg && <p>{msg}</p>}
-
-      {progress > 0 && (
-        <p>Processing: {progress}%</p>
+      {msg && (
+        <p className={msg.includes("access") ? "error-text" : "success-text"}>
+          {msg}
+        </p>
       )}
     </div>
   );

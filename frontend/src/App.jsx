@@ -3,6 +3,8 @@ import Login from "./components/Login";
 import Upload from "./components/Upload";
 import Videos from "./components/Videos";
 import "./App.css";
+import { getRoleFromToken } from "./utils/decodeToken";
+
 
 function App() {
   const [token, setToken] = useState(localStorage.getItem("token"));

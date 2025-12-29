@@ -9,17 +9,12 @@ const Video = require("../models/Video");
 
 const router = express.Router();
 
-/* =======================
-   Multer Configuration
-======================= */
+/* ---------- Multer Config ---------- */
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "uploads/");
-  },
-  filename: (req, file, cb) => {
-    cb(null, Date.now() + "-" + file.originalname);
-  }
+  destination: (req, file, cb) => cb(null, "uploads/"),
+  filename: (req, file, cb) =>
+    cb(null, Date.now() + "-" + file.originalname)
 });
 
 const fileFilter = (req, file, cb) => {
@@ -33,14 +28,10 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   fileFilter,
-  limits: {
-    fileSize: 500 * 1024 * 1024 // 500 MB
-  }
+  limits: { fileSize: 50 * 1024 * 1024 } // 50MB
 });
 
-/* =======================
-   Upload Video
-======================= */
+/* ---------- UPLOAD (Editor/Admin ONLY) ---------- */
 
 router.post(
   "/upload",
@@ -52,31 +43,12 @@ router.post(
       return res.status(400).json({ message: "No file uploaded" });
     }
 
-    // Save metadata in DB
     const video = await Video.create({
       filename: req.file.filename,
       uploadedBy: req.user.id,
       status: "processing",
       sensitivity: "pending"
     });
-
-    /* -------- Socket.io progress (FAKE) -------- */
-    const io = req.app.get("io");
-    let progress = 0;
-
-    const interval = setInterval(() => {
-      progress += 20;
-
-      io.emit("video-progress", {
-        filename: req.file.filename,
-        progress
-      });
-
-      if (progress >= 100) {
-        clearInterval(interval);
-      }
-    }, 1000);
-    /* ------------------------------------------- */
 
     res.json({
       message: "Video uploaded successfully",
@@ -85,39 +57,79 @@ router.post(
   }
 );
 
-/* =======================
-   Get My Videos
-======================= */
+/* ---------- LIST MY VIDEOS (ALL ROLES) ---------- */
 
-router.get("/my-videos", authMiddleware, async (req, res) => {
-  const videos = await Video.find({ uploadedBy: req.user.id });
-  res.json(videos);
-});
-
-/* =======================
-   Delete Video
-======================= */
-
-router.delete("/:id", authMiddleware, async (req, res) => {
-  const video = await Video.findOne({
-    _id: req.params.id,
-    uploadedBy: req.user.id
-  });
-
-  if (!video) {
-    return res.status(404).json({ message: "Video not found" });
+router.get(
+  "/my-videos",
+  authMiddleware,
+  async (req, res) => {
+    const videos = await Video.find({ uploadedBy: req.user.id });
+    res.json(videos);
   }
+);
 
-  // delete file from uploads folder
-  const filePath = path.join(__dirname, "../uploads", video.filename);
-  if (fs.existsSync(filePath)) {
-    fs.unlinkSync(filePath);
+/* ---------- STREAM VIDEO (ALL ROLES) ---------- */
+
+router.get(
+  "/stream/:filename",
+  authMiddleware,
+  (req, res) => {
+    const filePath = path.join(__dirname, "../uploads", req.params.filename);
+
+    if (!fs.existsSync(filePath)) {
+      return res.status(404).send("Video not found");
+    }
+
+    const stat = fs.statSync(filePath);
+    const range = req.headers.range;
+
+    if (!range) {
+      return res.status(400).send("Range header required");
+    }
+
+    const parts = range.replace(/bytes=/, "").split("-");
+    const start = parseInt(parts[0], 10);
+    const end = parts[1] ? parseInt(parts[1], 10) : stat.size - 1;
+
+    const chunkSize = end - start + 1;
+    const file = fs.createReadStream(filePath, { start, end });
+
+    res.writeHead(206, {
+      "Content-Range": `bytes ${start}-${end}/${stat.size}`,
+      "Accept-Ranges": "bytes",
+      "Content-Length": chunkSize,
+      "Content-Type": "video/mp4"
+    });
+
+    file.pipe(res);
   }
+);
 
-  // delete DB record
-  await video.deleteOne();
+/* ---------- DELETE VIDEO (Editor/Admin ONLY) ---------- */
 
-  res.json({ message: "Video deleted successfully" });
-});
+router.delete(
+  "/:id",
+  authMiddleware,
+  roleMiddleware(["editor", "admin"]),
+  async (req, res) => {
+    const video = await Video.findOne({
+      _id: req.params.id,
+      uploadedBy: req.user.id
+    });
+
+    if (!video) {
+      return res.status(404).json({ message: "Video not found" });
+    }
+
+    const filePath = path.join(__dirname, "../uploads", video.filename);
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+
+    await video.deleteOne();
+
+    res.json({ message: "Video deleted successfully" });
+  }
+);
 
 module.exports = router;
