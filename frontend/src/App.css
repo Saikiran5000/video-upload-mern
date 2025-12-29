@@ -1,44 +1,72 @@
+* {
+  box-sizing: border-box;
+}
+
 body {
-  font-family: Arial, sans-serif;
-  background: #f5f6fa;
+  margin: 0;
+  padding: 0;
+  font-family: Arial, Helvetica, sans-serif;
+  background: #f4f6f8;
 }
 
 .container {
-  max-width: 500px;
-  margin: 40px auto;
+  max-width: 420px;
+  margin: 60px auto;
+  padding: 10px;
   text-align: center;
 }
 
+h1 {
+  margin-bottom: 25px;
+}
+
+/* Card layout */
 .card {
-  background: white;
-  padding: 20px;
+  background: #ffffff;
+  padding: 22px;
   border-radius: 8px;
-  box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
   margin-bottom: 20px;
 }
 
-input[type="file"],
-input[type="email"],
-input[type="password"] {
+/* Inputs */
+input {
   width: 100%;
-  padding: 8px;
-  margin: 10px 0;
+  padding: 10px;
+  margin: 8px 0;
+  border-radius: 4px;
+  border: 1px solid #ccc;
+  font-size: 14px;
 }
 
+/* Buttons */
 button {
-  background: #1976d2;
+  width: 100%;
+  padding: 10px;
+  margin-top: 10px;
+  background-color: #1976d2;
   color: white;
   border: none;
-  padding: 10px;
-  width: 100%;
+  border-radius: 4px;
   cursor: pointer;
-  border-radius: 5px;
+  font-size: 15px;
 }
 
 button:hover {
-  background: #125aa0;
+  background-color: #125aa0;
 }
 
+/* Logout button */
+.logout {
+  background: #d32f2f;
+  margin-bottom: 15px;
+}
+
+.logout:hover {
+  background: #b71c1c;
+}
+
+/* Messages */
 .error-text {
   color: #d32f2f;
   font-weight: 600;

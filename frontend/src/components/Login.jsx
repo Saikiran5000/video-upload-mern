@@ -3,12 +3,14 @@ import { useState } from "react";
 function Login({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [msg, setMsg] = useState("");
 
   const loginUser = async () => {
-    setError("");
-    setLoading(true);
+    // basic validation
+    if (!email || !password) {
+      setMsg("Please enter email and password");
+      return;
+    }
 
     try {
       const res = await fetch("http://localhost:5000/api/auth/login", {
@@ -20,19 +22,17 @@ function Login({ onLogin }) {
       const data = await res.json();
 
       if (!res.ok) {
-        // backend error message
-        setError(data.message || "Login failed");
-        setLoading(false);
+        setMsg(data.message || "Invalid email or password");
         return;
       }
 
-      // success
-      onLogin(data.token);
-    } catch (err) {
-      setError("Server not reachable");
+      if (data.token) {
+        setMsg("");
+        onLogin(data.token);
+      }
+    } catch (error) {
+      setMsg("Invalid email or password");
     }
-
-    setLoading(false);
   };
 
   return (
@@ -40,6 +40,7 @@ function Login({ onLogin }) {
       <h2>Login</h2>
 
       <input
+        type="email"
         placeholder="Email"
         value={email}
         onChange={(e) => setEmail(e.target.value)}
@@ -52,11 +53,9 @@ function Login({ onLogin }) {
         onChange={(e) => setPassword(e.target.value)}
       />
 
-      <button onClick={loginUser} disabled={loading}>
-        {loading ? "Logging in..." : "Login"}
-      </button>
+      <button onClick={loginUser}>Login</button>
 
-      {error && <p className="error">{error}</p>}
+      {msg && <p className="error-text">{msg}</p>}
     </div>
   );
 }
